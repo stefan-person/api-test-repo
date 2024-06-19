@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check permissions
-        if: contains(secrets.ALLOWED_ACTORS , github.triggering_actor)
+        if: ${{ contains( secrets.ALLOWED_ACTORS , github.triggering_actor) }}
         uses: actions/github-script@v4
         with:
           script: |
