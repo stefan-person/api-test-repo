@@ -15,3 +15,25 @@ jobs:
         with:
           script: |
             core.setFailed('You are not allowed to trigger this workflow')
+
+      - name: Toggle release/hotfix branch protection
+        run: |
+          #!/bin/bash
+          
+          OWNER="${{ vars.REPO_OWNER }}"
+          REPO="${{ vars.REPO_NAME }}"
+          PAT="${{ secrets.PAT }}"
+          RULESET_NAME="Generated - Prevent Release/Hotfix changes"
+          
+          ALL_RULESETS=$(curl --silent --header "Accept: application/vnd.github+json" --header "Authorization: Bearer ${PAT}" --header "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/${OWNER}/${REPO}/rulesets")
+          FOUND_RULESET=$(jq '.[] | select( .name | contains("'"${RULESET_NAME}"'"))' <<< "${ALL_RULESETS}")
+          
+          if [ -z "${FOUND_RULESET}" ]; then
+          	echo "No ruleset found with name ${RULESET_NAME} ... will create it to prevent release/hotfix changes"
+          	curl -X POST --header "Accept: application/vnd.github+json" --header "Authorization: Bearer ${PAT}" --header "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/${OWNER}/${REPO}/rulesets" --data '{"name":"'"${RULESET_NAME}"'","target":"branch","enforcement":"active","bypass_actors":[],"conditions":{"ref_name":{"include":["refs/heads/hotfix/**","refs/heads/release/**"], "exclude":[]}},"rules":[{"type":"update","parameters":{"update_allows_fetch_and_merge":true}}]}'
+          else
+          	echo "Found ruleset found with name ${RULESET_NAME} ... will delete it to allow release/hotfix changes"
+          	RULESET_ID=$(jq '.id' <<< "${FOUND_RULESET}")
+          	curl -X DELETE --header "Accept: application/vnd.github+json" --header "Authorization: Bearer ${PAT}" --header "X-GitHub-Api-Version: 2022-11-28" "https://api.github.com/repos/${OWNER}/${REPO}/rulesets/${RULESET_ID}"
+          	echo "Deleted ruleset with ID $RULESET_ID"
+          fi
