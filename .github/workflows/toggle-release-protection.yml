@@ -10,7 +10,7 @@ jobs:
       allowed_actors: "${{ secrets.ALLOWED_ACTORS }}"
     steps:
       - name: Check permissions
-        if: ${{ contains( env.allowed_actors , github.triggering_actor) }}
+        if: ${{ ! contains( env.allowed_actors , github.triggering_actor) }}
         uses: actions/github-script@v4
         with:
           script: |
