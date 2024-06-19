@@ -6,9 +6,11 @@ jobs:
   toggle:
     name: Toggle release/hotfix branch protection
     runs-on: ubuntu-latest
+    env:
+      allowed_actors: "${{ secrets.ALLOWED_ACTORS }}"
     steps:
       - name: Check permissions
-        if: ${{ contains( secrets.ALLOWED_ACTORS , github.triggering_actor) }}
+        if: ${{ contains( env.allowed_actors , github.triggering_actor) }}
         uses: actions/github-script@v4
         with:
           script: |
